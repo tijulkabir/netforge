@@ -57,6 +57,7 @@
    - You will see a calculator.
    - Enter `1971-2024`.
    - Press `=`.
+   - The authentication
    - The NetForge interface will appear.
 
 ## Building for Production
