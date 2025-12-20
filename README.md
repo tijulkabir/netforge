@@ -71,4 +71,4 @@ The output will be in the `dist` directory.
 
 ## License
 
-[MIT](LICENSE)
+Copyright © 2025 Tijul Kabir Toha. This project is licensed under the [MIT](LICENSE).
