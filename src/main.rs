@@ -1,3 +1,6 @@
+#![allow(unknown_lints)]
+#![allow(clippy::chunks_exact_to_as_chunks)]
+
 use clap::Parser;
 use netforge::{build_operation, list_operations, InputData, Pipeline};
 use std::io::{self, Write};

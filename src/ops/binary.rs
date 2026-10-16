@@ -192,7 +192,7 @@ impl PeSection {
 
 fn parse_pe_headers(input: &[u8]) -> Result<PeHeaderInfo, NetForgeError> {
     // 1. Verify DOS Header
-    if input.len() < 0x40 || input[0..2] != [b'M', b'Z'] {
+    if input.len() < 0x40 || &input[0..2] != b"MZ" {
         return Err(NetForgeError::Custom(
             "invalid DOS header: missing 'MZ' signature".into(),
         ));
