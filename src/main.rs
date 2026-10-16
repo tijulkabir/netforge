@@ -204,11 +204,9 @@ fn run_cli_fuzz(iters: usize) {
 
     let report = netforge::run_fuzz_harness(iters);
     let total_checks = report.roundtrip_checks + report.adversarial_checks;
-    let rate = if report.duration_ms > 0 {
-        (total_checks as u128 * 1000) / report.duration_ms
-    } else {
-        total_checks as u128 * 1000
-    };
+    let rate = (total_checks as u128 * 1000)
+        .checked_div(report.duration_ms)
+        .unwrap_or(total_checks as u128 * 1000);
 
     println!("╠═══════════════════════════════════════════════════════╣");
     println!("║ Completed Iterations : {:>8}", report.iterations);
