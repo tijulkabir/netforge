@@ -1,4 +1,4 @@
-# NetForge ⚡
+# NetForge
 
 [![Rust](https://img.shields.io/badge/language-Rust-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -11,7 +11,7 @@
 
 ---
 
-## 🛠️ Key Capabilities
+## Key Capabilities
 
 | Domain | Operations | Description |
 |---|---|---|
@@ -25,7 +25,7 @@
 
 ---
 
-## 🚀 Installation & Build
+## Installation & Build
 
 Ensure you have Rust (MSRV 1.80+) installed:
 
@@ -39,7 +39,7 @@ The optimized binary will be located at `target/release/netforge` (or `netforge.
 
 ---
 
-## ⚡ CLI Usage & Pipeline Examples
+## CLI Usage & Pipeline Examples
 
 ### 1. NTLM Hash Generation (Pass-the-Hash)
 Compute the NTLM hash of a password directly via RFC 1320 MD4:
@@ -92,7 +92,7 @@ echo -n "flag{crypto_is_fun}" | netforge to_hex rot13
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
                       ┌──────────────────────┐
@@ -136,7 +136,7 @@ pub trait Operation: Send + Sync {
 
 ---
 
-## 🧪 Testing & Invariant Fuzzing
+## Testing & Invariant Fuzzing
 
 ### 1. Unit & Property-Based Test Suite
 Runs 34 unit tests and 6 `proptest` property suites (40 total automated verifications):
@@ -166,5 +166,5 @@ netforge --fuzz --fuzz-iters 10000
 ╚═══════════════════════════════════════════════════════╝
 ```
 
-## 📜 License
+## License
 MIT License. Crafted for security researchers and builders.
