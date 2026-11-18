@@ -53,6 +53,17 @@ pub fn build_operation(name: &str, arg: Option<&str>) -> Option<Box<dyn Operatio
             }
         }
 
+        // Auto-decode & XOR recovery (Phase 1)
+        "magic" => {
+            let depth = arg.and_then(|a| a.parse::<usize>().ok()).unwrap_or(6);
+            Some(Box::new(ops::Magic::new(depth)))
+        }
+        "xor_brute" => Some(Box::new(ops::XorBrute)),
+        "xor_break" => {
+            let max_ks = arg.and_then(|a| a.parse::<usize>().ok()).unwrap_or(40);
+            Some(Box::new(ops::XorBreak::new(max_ks)))
+        }
+
         // Hashing
         "md5" => Some(Box::new(ops::HashMd5)),
         "sha256" => Some(Box::new(ops::HashSha256)),
@@ -106,6 +117,18 @@ pub fn list_operations() -> Vec<(&'static str, &'static str)> {
         (
             "xor",
             "XOR cipher (single or rolling key via --arg or inline :key)",
+        ),
+        (
+            "magic",
+            "Recursive auto-decode (base64/hex/url/rot13); depth via :N",
+        ),
+        (
+            "xor_brute",
+            "Single-byte XOR brute force, ranked by plaintext score",
+        ),
+        (
+            "xor_break",
+            "Break repeating-key XOR (Hamming keysize + per-column solve)",
         ),
         ("md5", "MD5 hash (32-char hex)"),
         ("sha256", "SHA-256 hash (64-char hex)"),

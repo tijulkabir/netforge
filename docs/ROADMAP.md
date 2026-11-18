@@ -86,15 +86,15 @@ a script, parse the JSON, and trust the release artifact.
 
 ### Phase 1 — DECODE (the hook that gets people to try it)
 
-- [ ] `magic`: recursive auto-decode with a scoring engine.
-  - Candidate decoders: base64/32/58/85/91, hex, url, rot-n, gzip/zlib, XOR.
-  - Scoring: Shannon entropy delta, charset/printable ratio, dictionary hit rate,
-    flag-format regex (`flag{`, `HTB{`, `FLAG-`, `CTF{`, configurable).
-  - Depth-limited search tree; print the winning decode path (`b64 -> gzip -> utf8`).
-  - **Differentiator:** also detect *binary* structure at each node (magic bytes →
-    PE/ELF/ZIP/PNG) and branch into triage instead of treating everything as text.
-- [ ] XOR key recovery: single-byte brute, repeating-key via Hamming distance +
-      Kasiski, known-plaintext crib drag.
+- [x] `magic`: recursive auto-decode with a scoring engine. Done — `src/ops/magic.rs`.
+  - Decoders: base64, hex, url, rot13 (BFS, depth-limited, deduped, bounded).
+  - Scoring: English-frequency + printable ratio + flag-marker short-circuit
+    (`src/ops/score.rs`); prints the winning decode path (`from_hex -> from_base64`).
+  - *Remaining:* base32/58/85, gzip/zlib (needs a dep decision), and branching into
+    binary triage (magic bytes → PE/ELF/ZIP) once Phase 2 parsers land.
+- [x] XOR key recovery: `xor_brute` (single-byte, ranked) and `xor_break`
+      (repeating-key: Index-of-Coincidence keysize + per-column single-byte solve).
+      Done — `src/ops/xor_tools.rs`. *Remaining:* known-plaintext crib drag.
 - [ ] Classic ciphers: Vigenère, Atbash, Caesar brute, morse, bacon, substitution.
 
 ### Phase 2 — TRIAGE (the capability that replaces a toolbox)

@@ -219,7 +219,8 @@ fn print_op_list() {
                 "url_decode",
             ],
         ),
-        ("Crypto", vec!["xor"]),
+        ("Crypto", vec!["xor", "xor_brute", "xor_break"]),
+        ("Auto-Decode", vec!["magic"]),
         ("Hashing", vec!["md5", "sha256", "sha512", "blake3", "ntlm"]),
         (
             "Analysis",
