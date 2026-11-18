@@ -59,6 +59,42 @@ pub fn build_operation(name: &str, arg: Option<&str>) -> Option<Box<dyn Operatio
             Some(Box::new(ops::Magic::new(depth)))
         }
         "xor_brute" => Some(Box::new(ops::XorBrute)),
+        "rc4" => {
+            let key = arg.unwrap_or("");
+            if key.is_empty() {
+                return None;
+            }
+            let key_bytes = if let Some(hex) =
+                key.strip_prefix("0x").or_else(|| key.strip_prefix("0X"))
+            {
+                let clean = hex.replace(|c: char| c.is_whitespace() || c == ',' || c == ':', "");
+                if clean.is_empty() || !clean.len().is_multiple_of(2) {
+                    return None;
+                }
+                let mut b = Vec::new();
+                for pair in clean.as_bytes().chunks_exact(2) {
+                    b.push(u8::from_str_radix(std::str::from_utf8(pair).ok()?, 16).ok()?);
+                }
+                b
+            } else {
+                key.as_bytes().to_vec()
+            };
+            Some(Box::new(ops::Rc4::new(&key_bytes)))
+        }
+        "vigenere" => arg
+            .filter(|a| !a.is_empty())
+            .map(|a| Box::new(ops::Vigenere::new(a.as_bytes(), false)) as Box<dyn Operation>),
+        "vigenere_decrypt" => arg
+            .filter(|a| !a.is_empty())
+            .map(|a| Box::new(ops::Vigenere::new(a.as_bytes(), true)) as Box<dyn Operation>),
+        "atbash" => Some(Box::new(ops::Atbash)),
+        "caesar_brute" => Some(Box::new(ops::CaesarBrute)),
+        "to_morse" => Some(Box::new(ops::ToMorse)),
+        "from_morse" => Some(Box::new(ops::FromMorse)),
+        "badchars" => {
+            let bytes = ops::parse_byte_list(arg.unwrap_or("00"));
+            Some(Box::new(ops::BadChars::new(&bytes)))
+        }
         "xor_break" => {
             let max_ks = arg.and_then(|a| a.parse::<usize>().ok()).unwrap_or(40);
             Some(Box::new(ops::XorBreak::new(max_ks)))
@@ -130,6 +166,20 @@ pub fn list_operations() -> Vec<(&'static str, &'static str)> {
         (
             "xor_brute",
             "Single-byte XOR brute force, ranked by plaintext score",
+        ),
+        (
+            "rc4",
+            "RC4 stream cipher (symmetric); key via :key or :0xHEX",
+        ),
+        ("vigenere", "Vigenère encrypt (key via :key)"),
+        ("vigenere_decrypt", "Vigenère decrypt (key via :key)"),
+        ("atbash", "Atbash substitution (self-inverse)"),
+        ("caesar_brute", "Brute-force all 25 Caesar shifts, ranked"),
+        ("to_morse", "Encode ASCII text to Morse code"),
+        ("from_morse", "Decode Morse code to ASCII text"),
+        (
+            "badchars",
+            "Report forbidden bytes & offsets (e.g. badchars:00,0a,0d)",
         ),
         (
             "xor_break",

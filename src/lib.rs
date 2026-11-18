@@ -330,19 +330,23 @@ mod tests {
 
     #[test]
     fn registry_builds_all() {
+        // Operations that require an argument and so do not build with None.
+        let needs_arg = ["xor", "strings", "rc4", "vigenere", "vigenere_decrypt"];
         let names = list_operations();
         for (name, _) in &names {
-            if *name == "xor" || *name == "strings" {
+            if needs_arg.contains(name) {
                 continue;
-            } // need args
+            }
             assert!(
                 build_operation(name, None).is_some(),
                 "Registry failed to build '{name}'"
             );
         }
-        // XOR with arg
+        // Parameterized ops build with a valid arg.
         assert!(build_operation("xor", Some("42")).is_some());
         assert!(build_operation("xor", Some("0xDEAD")).is_some());
+        assert!(build_operation("rc4", Some("key")).is_some());
+        assert!(build_operation("vigenere", Some("lemon")).is_some());
         // Strings with arg
         assert!(build_operation("strings", Some("6")).is_some());
     }

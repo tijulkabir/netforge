@@ -1,5 +1,6 @@
 pub mod analysis;
 pub mod binary;
+pub mod cipher_extra;
 pub mod crypto;
 pub mod elf;
 pub mod encoding;
@@ -15,6 +16,7 @@ pub mod xor_tools;
 // Re-export all operations for ergonomic imports.
 pub use analysis::*;
 pub use binary::*;
+pub use cipher_extra::*;
 pub use crypto::*;
 pub use elf::*;
 pub use encoding::*;

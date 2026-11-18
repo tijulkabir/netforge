@@ -95,7 +95,8 @@ a script, parse the JSON, and trust the release artifact.
 - [x] XOR key recovery: `xor_brute` (single-byte, ranked) and `xor_break`
       (repeating-key: Index-of-Coincidence keysize + per-column single-byte solve).
       Done — `src/ops/xor_tools.rs`. *Remaining:* known-plaintext crib drag.
-- [ ] Classic ciphers: Vigenère, Atbash, Caesar brute, morse, bacon, substitution.
+- [x] Classic ciphers: Vigenère, Atbash, Caesar brute, Morse — delivered in
+      Phase 3 (`src/ops/cipher_extra.rs`). *Remaining:* bacon, substitution.
 
 ### Phase 2 — TRIAGE (the capability that replaces a toolbox)
 
@@ -113,16 +114,25 @@ a script, parse the JSON, and trust the release artifact.
 - [ ] Mach-O basics (load commands, segments, signature presence).
 - [ ] YARA-lite: simple byte/string pattern rules for tagging known stagers/configs.
 
-### Phase 3 — FORGE (payload work for authorized ops)
+### Phase 3 — FORGE / CRYPTO & ANALYSIS
 
-- [ ] Shellcode formatters: C, C#, PowerShell, Nim, Rust, Python, raw, hex.
-- [ ] Bad-char detection and avoidance report (`--badchars 00,0a,0d`).
-- [ ] Real crypto: AES-CBC/GCM, RC4, ChaCha20 encrypt/decrypt (C2 configs use
-      these, not single-byte XOR).
-- [ ] Hash tooling: output in hashcat/john formats; NetNTLMv2, LM, NTLM already
-      present — add the crack-ready formatting.
-- [ ] Encoders for evasion-of-detection *analysis* (build-time obfuscation studies),
-      clearly framed as research/analysis, not delivery.
+> **Scope decision:** this phase is deliberately kept to reversible analysis and
+> classic cryptanalysis. Multi-language shellcode/loader-stub *generators*
+> (C#/PowerShell byte-array emitters, etc.) are intentionally **out of scope** —
+> they are payload-delivery code, which the project's ethics note excludes. Byte
+> embedding for legitimate uses is already covered by `to_c_array`.
+
+- [x] Bad-char *analysis*: `badchars` reports forbidden bytes and their offsets
+      (a vetting read-out, not a payload generator). Done — `src/ops/cipher_extra.rs`.
+- [x] RC4 encrypt/decrypt for decoding malware/C2 config blobs and CTF crypto.
+      Done — `src/ops/cipher_extra.rs` (verified against the RC4("Key","Plaintext")
+      test vector).
+- [x] Classic ciphers (carried from Phase 1): Vigenère (+decrypt), Atbash,
+      Caesar brute-force, Morse encode/decode. Done — `src/ops/cipher_extra.rs`.
+- [ ] AES-CBC/GCM, ChaCha20 decrypt for config analysis (needs a vetted,
+      audited crypto dependency — deferred pending that supply-chain decision).
+- [ ] Hash tooling: output in hashcat/john formats; NetNTLMv2, LM.
+- [ ] Shellcode source formatters — **excluded** (see scope decision above).
 
 ### Phase 4 — PLATFORM (become infrastructure, not a command)
 
