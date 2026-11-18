@@ -136,12 +136,17 @@ a script, parse the JSON, and trust the release artifact.
 
 ### Phase 4 — PLATFORM (become infrastructure, not a command)
 
-- [ ] Recipe engine: `netforge run recipe.yaml` — committable, shareable,
-      headless pipelines (the CyberChef recipe idea, but in CI and version control).
+- [x] Recipe engine: `netforge --recipe file` — committable, shareable, headless
+      pipelines (one op per line, `#` comments; the CyberChef recipe idea, but
+      diff-able and in version control). Works with `--json`, which reports the
+      resolved pipeline. Done — `src/recipe.rs`. *Remaining:* a `run` subcommand
+      alias and a named recipe library.
 - [ ] Named recipe library shipped with the binary + user recipe dir.
 - [ ] `--server`: local HTTP/JSON API so other tooling (Burp, custom scripts,
-      notebooks) can call NetForge ops without reimplementing them.
+      notebooks) can call NetForge ops without reimplementing them (needs an HTTP
+      dependency — deferred pending that supply-chain decision).
 - [ ] Plugin/op SDK: stable trait so the community can add ops without forking.
+      (The `Operation` trait is already the seam; this is about publishing it.)
 - [ ] Optional TUI for interactive triage sessions.
 
 ---

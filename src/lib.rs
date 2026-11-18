@@ -8,6 +8,7 @@ pub mod op;
 pub mod ops;
 pub mod output;
 pub mod pipeline;
+pub mod recipe;
 pub mod registry;
 
 // Root-level re-exports for ergonomic usage.

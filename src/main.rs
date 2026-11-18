@@ -54,6 +54,11 @@ struct Cli {
     #[arg(short = 'n', long)]
     no_newline: bool,
 
+    /// Run a committable pipeline from a recipe file (one op per line; `#`
+    /// comments). Operations given on the command line are ignored.
+    #[arg(long, value_name = "FILE")]
+    recipe: Option<String>,
+
     /// Emit a structured JSON report instead of raw bytes (stable schema v1).
     #[arg(long)]
     json: bool,
@@ -105,7 +110,20 @@ fn main() {
         return;
     }
 
-    if cli.operations.is_empty() {
+    // ── Resolve the operation list: a recipe file overrides CLI operations. ──
+    let op_specs: Vec<String> = if let Some(ref path) = cli.recipe {
+        match std::fs::read_to_string(path) {
+            Ok(text) => netforge::recipe::parse_recipe(&text),
+            Err(e) => {
+                eprintln!("error: cannot read recipe '{path}': {e}");
+                std::process::exit(EX_USAGE);
+            }
+        }
+    } else {
+        cli.operations.clone()
+    };
+
+    if op_specs.is_empty() {
         eprintln!("error: no operations specified. Use --list to see available operations.");
         std::process::exit(EX_USAGE);
     }
@@ -115,7 +133,7 @@ fn main() {
 
     // ── Build pipeline ──
     let mut pipeline = Pipeline::new();
-    for op_spec in &cli.operations {
+    for op_spec in &op_specs {
         let (op_name, op_arg) = match op_spec.split_once(':') {
             Some((name, inline_arg)) => (name, Some(inline_arg)),
             None => (op_spec.as_str(), cli.arg.as_deref()),
@@ -129,7 +147,7 @@ fn main() {
                     let err = netforge::NetForgeError::Custom(format!(
                         "unknown or invalid operation '{op_spec}'"
                     ));
-                    println!("{}", output::error_json(VERSION, &cli.operations, &err));
+                    println!("{}", output::error_json(VERSION, &op_specs, &err));
                 } else {
                     eprintln!("error: unknown or invalid operation '{op_spec}'");
                     eprintln!("       run `netforge --list` to see available operations");
@@ -145,7 +163,7 @@ fn main() {
             if cli.json {
                 println!(
                     "{}",
-                    output::success_json(VERSION, input.len(), source, &cli.operations, &out)
+                    output::success_json(VERSION, input.len(), source, &op_specs, &out)
                 );
             } else {
                 io::stdout().write_all(&out).expect("write failed");
@@ -156,7 +174,7 @@ fn main() {
         }
         Err(e) => {
             if cli.json {
-                println!("{}", output::error_json(VERSION, &cli.operations, &e));
+                println!("{}", output::error_json(VERSION, &op_specs, &e));
             } else {
                 eprintln!("error: {e}");
             }
