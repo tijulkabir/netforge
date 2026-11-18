@@ -44,10 +44,10 @@ impl InputData {
     /// an empty owned buffer without erroring.
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, NetForgeError> {
         let file = File::open(path.as_ref())
-            .map_err(|e| NetForgeError::Custom(format!("cannot open file: {e}")))?;
+            .map_err(|e| NetForgeError::Io(format!("cannot open file: {e}")))?;
         let meta = file
             .metadata()
-            .map_err(|e| NetForgeError::Custom(format!("cannot read metadata: {e}")))?;
+            .map_err(|e| NetForgeError::Io(format!("cannot read metadata: {e}")))?;
 
         if meta.len() == 0 {
             return Ok(InputData::Owned(Vec::new()));
@@ -55,7 +55,7 @@ impl InputData {
 
         // Safety: We map the file in read-only mode for analysis/transformation.
         let mmap = unsafe { Mmap::map(&file) }
-            .map_err(|e| NetForgeError::Custom(format!("mmap failed: {e}")))?;
+            .map_err(|e| NetForgeError::Io(format!("mmap failed: {e}")))?;
 
         Ok(InputData::Mmap(mmap))
     }
@@ -70,7 +70,7 @@ impl InputData {
         let mut buf = Vec::new();
         reader
             .read_to_end(&mut buf)
-            .map_err(|e| NetForgeError::Custom(format!("failed to read stream: {e}")))?;
+            .map_err(|e| NetForgeError::Io(format!("failed to read stream: {e}")))?;
         Ok(InputData::Owned(buf))
     }
 }

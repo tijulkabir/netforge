@@ -2,8 +2,12 @@
 #![allow(clippy::chunks_exact_to_as_chunks)]
 
 use clap::Parser;
-use netforge::{build_operation, list_operations, InputData, Pipeline};
+use netforge::{build_operation, list_operations, output, InputData, Pipeline};
 use std::io::{self, Write};
+
+/// Process exit codes (BSD `sysexits.h` convention).
+const EX_USAGE: i32 = 64; // command line / usage error
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// ╔═══════════════════════════════════════════════════╗
 /// ║  NetForge v2.0 — Cyber Transformation Engine     ║
@@ -49,6 +53,10 @@ struct Cli {
     #[arg(short = 'n', long)]
     no_newline: bool,
 
+    /// Emit a structured JSON report instead of raw bytes (stable schema v1).
+    #[arg(long)]
+    json: bool,
+
     /// Run built-in property fuzzing and invariant resilience suite.
     #[arg(long)]
     fuzz: bool,
@@ -75,11 +83,11 @@ fn main() {
 
     if cli.operations.is_empty() {
         eprintln!("error: no operations specified. Use --list to see available operations.");
-        std::process::exit(1);
+        std::process::exit(EX_USAGE);
     }
 
     // ── Read input ──
-    let input = read_input(&cli);
+    let (input, source) = read_input(&cli);
 
     // ── Build pipeline ──
     let mut pipeline = Pipeline::new();
@@ -93,47 +101,77 @@ fn main() {
                 pipeline.push(op);
             }
             None => {
-                eprintln!("error: unknown or invalid operation '{op_spec}'");
-                eprintln!("       run `netforge --list` to see available operations");
-                std::process::exit(1);
+                if cli.json {
+                    let err = netforge::NetForgeError::Custom(format!(
+                        "unknown or invalid operation '{op_spec}'"
+                    ));
+                    println!("{}", output::error_json(VERSION, &cli.operations, &err));
+                } else {
+                    eprintln!("error: unknown or invalid operation '{op_spec}'");
+                    eprintln!("       run `netforge --list` to see available operations");
+                }
+                std::process::exit(EX_USAGE);
             }
         }
     }
 
     // ── Execute ──
     match pipeline.execute(&input) {
-        Ok(output) => {
-            io::stdout().write_all(&output).expect("write failed");
-            if !cli.no_newline {
-                println!();
+        Ok(out) => {
+            if cli.json {
+                println!(
+                    "{}",
+                    output::success_json(VERSION, input.len(), source, &cli.operations, &out)
+                );
+            } else {
+                io::stdout().write_all(&out).expect("write failed");
+                if !cli.no_newline {
+                    println!();
+                }
             }
         }
         Err(e) => {
-            eprintln!("error: {e}");
-            std::process::exit(1);
+            if cli.json {
+                println!("{}", output::error_json(VERSION, &cli.operations, &e));
+            } else {
+                eprintln!("error: {e}");
+            }
+            std::process::exit(e.exit_code());
         }
     }
 }
 
-fn read_input(cli: &Cli) -> InputData {
+/// Resolve the input source, returning the data and a human/JSON source label.
+fn read_input(cli: &Cli) -> (InputData, &'static str) {
     if let Some(ref text) = cli.input {
-        return InputData::from_bytes(text.as_bytes().to_vec());
+        return (InputData::from_bytes(text.as_bytes().to_vec()), "inline");
     }
     if let Some(ref path) = cli.file {
-        match InputData::from_file(path) {
-            Ok(data) => return data,
-            Err(e) => {
-                eprintln!("error: {e}");
-                std::process::exit(1);
+        // `-` means stdin even in --file position, matching common CLI convention.
+        if path != "-" {
+            match InputData::from_file(path) {
+                Ok(data) => return (data, "file"),
+                Err(e) => {
+                    if cli.json {
+                        println!("{}", output::error_json(VERSION, &cli.operations, &e));
+                    } else {
+                        eprintln!("error: {e}");
+                    }
+                    std::process::exit(e.exit_code());
+                }
             }
         }
     }
     // Default: read from stdin
     match InputData::from_reader(io::stdin()) {
-        Ok(data) => data,
+        Ok(data) => (data, "stdin"),
         Err(e) => {
-            eprintln!("error: {e}");
-            std::process::exit(1);
+            if cli.json {
+                println!("{}", output::error_json(VERSION, &cli.operations, &e));
+            } else {
+                eprintln!("error: {e}");
+            }
+            std::process::exit(e.exit_code());
         }
     }
 }

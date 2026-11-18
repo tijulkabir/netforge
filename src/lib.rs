@@ -6,6 +6,7 @@ pub mod fuzz;
 pub mod input;
 pub mod op;
 pub mod ops;
+pub mod output;
 pub mod pipeline;
 pub mod registry;
 
