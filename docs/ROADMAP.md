@@ -99,16 +99,18 @@ a script, parse the JSON, and trust the release artifact.
 
 ### Phase 2 — TRIAGE (the capability that replaces a toolbox)
 
-- [ ] ELF parser + `checksec`-equivalent (NX, PIE, RELRO, canary, Fortify). Most
-      pwn/Linux targets are ELF — this alone pulls in CTF players.
+- [x] ELF parser + `checksec`-equivalent (NX, PIE, RELRO, canary, Fortify).
+      Done — `src/ops/elf.rs` (`elf_info`, `checksec`), bounds-checked ELF32/64.
+- [x] File-type detection by magic bytes + embedded-file carving (binwalk-lite:
+      find appended ZIP/PNG/ELF/gzip/…). Done — `src/ops/fileid.rs`
+      (`file_type`, `carve`). *Remaining:* actual extraction/dumping of carved files.
+- [x] `triage <file>`: one command → unified report (type, size, hashes, entropy
+      with packed flag, ELF mitigations, embedded signatures). Done —
+      `src/ops/triage.rs`. *Remaining:* `--json` report shape, entropy map.
 - [ ] PE depth: import table with suspicious-API flagging (VirtualAlloc,
       WriteProcessMemory, etc.), exports, imphash, rich header, Authenticode presence,
       TLS callbacks, overlay detection.
 - [ ] Mach-O basics (load commands, segments, signature presence).
-- [ ] File-type detection by magic bytes + embedded-file carving (binwalk-lite:
-      find/extract appended ZIP/PNG/ELF/gzip).
-- [ ] `triage <file>`: one command → unified report (type, hashes, entropy map,
-      sections, mitigations, suspicious indicators, embedded files), `--json`.
 - [ ] YARA-lite: simple byte/string pattern rules for tagging known stagers/configs.
 
 ### Phase 3 — FORGE (payload work for authorized ops)

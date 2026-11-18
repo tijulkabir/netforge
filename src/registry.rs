@@ -89,6 +89,11 @@ pub fn build_operation(name: &str, arg: Option<&str>) -> Option<Box<dyn Operatio
         // Binary Analysis (Phase 2)
         "pe_info" => Some(Box::new(ops::PeInfo)),
         "pe_sections" => Some(Box::new(ops::PeSections)),
+        "elf_info" => Some(Box::new(ops::ElfInfo)),
+        "checksec" => Some(Box::new(ops::Checksec)),
+        "file_type" => Some(Box::new(ops::FileType)),
+        "carve" => Some(Box::new(ops::Carve)),
+        "triage" => Some(Box::new(ops::Triage)),
 
         // Protocol & Framing (Phase 2)
         "tlv_encode" => {
@@ -156,6 +161,20 @@ pub fn list_operations() -> Vec<(&'static str, &'static str)> {
         (
             "pe_sections",
             "PE section table with RWX detection & per-section entropy",
+        ),
+        (
+            "elf_info",
+            "ELF header triage (class, machine, type, entry)",
+        ),
+        (
+            "checksec",
+            "ELF exploit mitigations (NX, PIE, RELRO, canary, Fortify)",
+        ),
+        ("file_type", "Identify file type by magic bytes"),
+        ("carve", "Scan for embedded file signatures & offsets"),
+        (
+            "triage",
+            "One-shot recon: type, hashes, entropy, mitigations, embedded files",
         ),
         (
             "tlv_encode",

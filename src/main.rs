@@ -230,7 +230,18 @@ fn print_op_list() {
             "Network",
             vec!["defang_ip", "refang_ip", "defang_url", "refang_url"],
         ),
-        ("Binary", vec!["pe_info", "pe_sections"]),
+        (
+            "Binary",
+            vec![
+                "pe_info",
+                "pe_sections",
+                "elf_info",
+                "checksec",
+                "file_type",
+                "carve",
+                "triage",
+            ],
+        ),
         (
             "Protocol",
             vec!["tlv_encode", "tlv_decode", "checksum", "to_c_array"],
