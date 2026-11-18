@@ -4,9 +4,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
 
-**NetForge** is a high-performance, offline **cyber transformation and triage engine** for red teamers, penetration testers, malware analysts, and CTF competitors. It is a single static binary with **zero runtime dependencies** — the multitool you keep on a jump box, an analyst VM, or an air-gapped host where you cannot install anything or open a browser.
+**NetForge** is an offline **cyber transformation and triage engine** for red teamers, penetration testers, malware analysts, and CTF competitors. It is a single self-contained binary built on a **small, well-known dependency set** — the multitool you keep on a jump box, an analyst VM, or an air-gapped host where you cannot install anything or open a browser.
 
-Think of it as a fast, scriptable, offline CyberChef fused with `file`, `strings`, `checksec`, and a cryptanalysis kit — all pipeline-native and emitting structured JSON for your own tooling.
+Think of it as a scriptable, offline CyberChef fused with `file`, `strings`, `checksec`, and a cryptanalysis kit — all pipeline-native and emitting structured JSON for your own tooling.
 
 > **Scope & ethics.** NetForge is built for **authorized** engagements, research, and CTFs. It forges the blade — triage, analysis, decoding, and classic cryptanalysis — and deliberately does **not** ship payload delivery, C2, or detection-evasion capability. See [the roadmap's scope note](docs/ROADMAP.md).
 
@@ -43,7 +43,7 @@ Run `netforge --list` for the authoritative, self-documenting list.
 
 ## Install & build
 
-Requires Rust (MSRV 1.80+):
+Requires Rust (MSRV 1.87+ — uses `is_multiple_of`):
 
 ```bash
 git clone https://github.com/tijulkabir/netforge.git
@@ -127,10 +127,10 @@ See the **[User Manual](docs/MANUAL.md)** for a full tour with examples for ever
 
 ## Why NetForge
 
-- **Offline, single static binary** — no interpreter, no browser, no network. Runs where `pip install` can't.
+- **Offline, single binary** — no interpreter, no browser, no network access. Runs where `pip install` can't.
 - **Pipeline-native & scriptable** — compose ops through pipes; `--json` on every run makes it callable from other tooling.
-- **Fast** — memory-mapped input (`memmap2`), multi-core analysis (`rayon`), constant-memory streaming XOR for files larger than RAM.
-- **Trustworthy** — zero-dependency core, a fuzzed parser suite proving a zero-panic guarantee, `cargo-deny` supply-chain gating in CI, and bounds-checked binary parsers that never trust attacker-controlled length fields.
+- **Built for large inputs** — memory-mapped input (`memmap2`) and multi-core analysis for entropy and BLAKE3 (`rayon`). A constant-memory streaming XOR path is implemented in the core (`Operation::transform_stream`); wiring it into the CLI pipeline is on the roadmap.
+- **Trustworthy** — a small, well-known dependency set, a fuzz harness that asserts a zero-panic invariant across adversarial inputs, `cargo-deny` supply-chain gating in CI, and bounds-checked binary parsers that don't trust attacker-controlled length fields.
 
 ---
 
@@ -165,7 +165,7 @@ cargo fmt --check                # formatting
 netforge --fuzz --fuzz-iters 10000   # live zero-panic invariant fuzzer
 ```
 
-The fuzzer hammers every parser — including a structured PE fuzzer that forges hostile headers — and asserts zero panics across hundreds of thousands of adversarial operations.
+The fuzzer exercises every parser — including a structured PE fuzzer that forges hostile headers — and asserts zero panics across many thousands of adversarial operations (hundreds of thousands at `--fuzz-iters 10000`).
 
 ---
 

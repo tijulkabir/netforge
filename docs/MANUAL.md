@@ -139,7 +139,7 @@ netforge --input '<blob>' magic:8        # :N sets max decode depth (default 6)
 
 | Op | Description |
 |---|---|
-| `xor:<key>` | XOR with a key: decimal byte (`xor:66`), hex (`xor:0xDEAD`), or ASCII (`xor:mykey`). Streams in constant memory for huge files. |
+| `xor:<key>` | XOR with a key: decimal byte (`xor:66`), hex (`xor:0xDEAD`), or ASCII (`xor:mykey`). |
 | `xor_brute` | Single-byte brute force — ranks all 256 keys by plaintext score. |
 | `xor_break` | Repeating-key XOR recovery — detects key length via Index of Coincidence, solves each column, returns the key and plaintext. |
 

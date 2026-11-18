@@ -26,7 +26,8 @@ If you are unsure, open an issue describing the use case before writing code.
 
 ## Development setup
 
-Requires a recent stable Rust toolchain (MSRV 1.80+).
+Requires a recent stable Rust toolchain (MSRV 1.87+ — the code uses
+`is_multiple_of`, stabilized in 1.87).
 
 ```bash
 git clone https://github.com/tijulkabir/netforge.git
@@ -51,10 +52,13 @@ all tests passing on Linux, Windows, and macOS (CI checks all three).
 
 ## Dependency policy
 
-The **core is zero-dependency on purpose** — NetForge runs on locked-down and
-air-gapped hosts, and a small supply chain is a feature. Current dependencies are
-limited to well-known crates (`clap`, `sha2`/`md-5`/`md4`/`blake3` for hashing,
-`memmap2`, `rayon`). Adding a dependency needs justification in the PR and must
+NetForge **keeps its dependency set small on purpose** — it runs on locked-down
+and air-gapped hosts, and a small supply chain is a feature. Dependencies are
+limited to well-known crates: `clap` (+`clap_complete`/`clap_mangen`) for the
+CLI, `sha2`/`md-5`/`md4`/`blake3` for hashing, `memmap2`, and `rayon`. Transform
+and parser logic (encoding, XOR, ELF, magic, the JSON output layer) is
+hand-rolled with no extra crates. Adding a dependency needs justification in the
+PR and must
 pass the `cargo-deny` CI job (advisories, bans, licenses, sources). Prefer
 hand-rolling small, well-understood algorithms over pulling a crate.
 
@@ -164,7 +168,7 @@ Say you want to add `base32` decoding.
 - Unit and property tests run with `cargo test` (proptest suites live in
   `tests/fuzz_properties.rs`).
 - The live invariant fuzzer runs from the CLI: `netforge --fuzz --fuzz-iters N`.
-  It proves a zero-panic guarantee across adversarial inputs, including a
+  It asserts a zero-panic invariant across adversarial inputs, including a
   structured PE fuzzer that forges hostile headers.
 - New parsing code should not reduce fuzz coverage — add your op to `fuzz.rs`.
 
