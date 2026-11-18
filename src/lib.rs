@@ -295,6 +295,37 @@ mod tests {
         assert_eq!(r13, b"uryyb");
     }
 
+    // ─────────────────── Streaming ───────────────────
+
+    #[test]
+    fn xor_stream_matches_execute_across_chunk_boundary() {
+        use std::io::Cursor;
+        // Larger than the 64 KiB streaming chunk so the key must stay aligned
+        // across at least three reads; 7-byte key does not divide the chunk.
+        let data: Vec<u8> = (0..200_000u32).map(|i| (i % 251) as u8).collect();
+        let key = b"VANGUARD"[..7].to_vec();
+        let xor = Xor::rolling(&key);
+
+        let oneshot = xor.execute(&data).unwrap();
+
+        let mut reader = Cursor::new(&data);
+        let mut streamed = Vec::new();
+        xor.transform_stream(&mut reader, &mut streamed).unwrap();
+
+        assert_eq!(streamed, oneshot, "streaming XOR diverged from one-shot");
+    }
+
+    #[test]
+    fn default_transform_stream_buffers_correctly() {
+        use std::io::Cursor;
+        // Rot13 uses the default buffering transform_stream.
+        let data = b"Attack at dawn";
+        let mut reader = Cursor::new(&data[..]);
+        let mut out = Vec::new();
+        Rot13.transform_stream(&mut reader, &mut out).unwrap();
+        assert_eq!(out, Rot13.execute(data).unwrap());
+    }
+
     // ─────────────────── Registry ────────────────────
 
     #[test]

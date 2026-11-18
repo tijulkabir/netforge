@@ -13,6 +13,8 @@ categories = ["command-line-utilities", "cryptography", "development-tools"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
+clap_mangen = "0.2"
 sha2 = "0.10"
 md-5 = "0.10"
 blake3 = { version = "1", features = ["rayon"] }

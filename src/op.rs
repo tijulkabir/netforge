@@ -1,4 +1,5 @@
 use crate::error::NetForgeError;
+use std::io::{Read, Write};
 
 /// The fundamental contract every transformation implements.
 ///
@@ -24,6 +25,32 @@ pub trait Operation: Send + Sync {
         let res = self.execute(input)?;
         output.clear();
         output.extend_from_slice(&res);
+        Ok(())
+    }
+
+    /// Streaming transform: read from `reader`, write to `writer`.
+    ///
+    /// This is the foundation for operating on inputs larger than RAM. The
+    /// default implementation buffers the whole stream and delegates to
+    /// [`Operation::execute`], which preserves correctness for operations that
+    /// genuinely need the full input (hashing, entropy, binary parsers).
+    ///
+    /// Byte-wise operations (XOR, ROT13, …) override this to process the input
+    /// in bounded chunks with constant memory, so a multi-gigabyte dump can be
+    /// deobfuscated through a pipe without ever being fully resident.
+    fn transform_stream(
+        &self,
+        reader: &mut dyn Read,
+        writer: &mut dyn Write,
+    ) -> Result<(), NetForgeError> {
+        let mut buf = Vec::new();
+        reader
+            .read_to_end(&mut buf)
+            .map_err(|e| NetForgeError::Io(format!("stream read failed: {e}")))?;
+        let out = self.execute(&buf)?;
+        writer
+            .write_all(&out)
+            .map_err(|e| NetForgeError::Io(format!("stream write failed: {e}")))?;
         Ok(())
     }
 }

@@ -63,7 +63,10 @@ fn json_escape(s: &str) -> String {
 
 /// Render a `["a","b"]` JSON array from string slices.
 fn json_str_array(items: &[String]) -> String {
-    let inner: Vec<String> = items.iter().map(|s| format!("\"{}\"", json_escape(s))).collect();
+    let inner: Vec<String> = items
+        .iter()
+        .map(|s| format!("\"{}\"", json_escape(s)))
+        .collect();
     format!("[{}]", inner.join(","))
 }
 
@@ -148,13 +151,23 @@ mod tests {
 
     #[test]
     fn success_binary_output_is_base64() {
-        let j = success_json("2.0.0", 1, "inline", &["xor:0xff".into()], &[0xff, 0x00, 0x80]);
+        let j = success_json(
+            "2.0.0",
+            1,
+            "inline",
+            &["xor:0xff".into()],
+            &[0xff, 0x00, 0x80],
+        );
         assert!(j.contains("\"encoding\":\"base64\""));
     }
 
     #[test]
     fn error_carries_stable_code() {
-        let j = error_json("2.0.0", &["from_base64".into()], &NetForgeError::InvalidBase64);
+        let j = error_json(
+            "2.0.0",
+            &["from_base64".into()],
+            &NetForgeError::InvalidBase64,
+        );
         assert!(j.contains("\"ok\":false"));
         assert!(j.contains("\"code\":\"invalid_base64\""));
     }

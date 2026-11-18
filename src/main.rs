@@ -1,7 +1,8 @@
 #![allow(unknown_lints)]
 #![allow(clippy::chunks_exact_to_as_chunks)]
 
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::Shell;
 use netforge::{build_operation, list_operations, output, InputData, Pipeline};
 use std::io::{self, Write};
 
@@ -57,6 +58,14 @@ struct Cli {
     #[arg(long)]
     json: bool,
 
+    /// Generate a shell completion script to stdout and exit.
+    #[arg(long, value_name = "SHELL")]
+    completions: Option<Shell>,
+
+    /// Generate a roff man page to stdout and exit.
+    #[arg(long)]
+    man: bool,
+
     /// Run built-in property fuzzing and invariant resilience suite.
     #[arg(long)]
     fuzz: bool,
@@ -68,6 +77,21 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
+
+    // ── Generators (completions / man page) ──
+    if let Some(shell) = cli.completions {
+        let mut cmd = Cli::command();
+        let name = cmd.get_name().to_string();
+        clap_complete::generate(shell, &mut cmd, name, &mut io::stdout());
+        return;
+    }
+    if cli.man {
+        let cmd = Cli::command();
+        clap_mangen::Man::new(cmd)
+            .render(&mut io::stdout())
+            .expect("failed to render man page");
+        return;
+    }
 
     // ── Fuzz mode ──
     if cli.fuzz {

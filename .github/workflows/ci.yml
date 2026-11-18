@@ -37,3 +37,15 @@ jobs:
 
       - name: Run test suite & proptest fuzzing
         run: cargo test --all-targets --verbose
+
+  security:
+    name: Supply-chain audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: cargo-deny (advisories, bans, licenses, sources)
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories bans licenses sources

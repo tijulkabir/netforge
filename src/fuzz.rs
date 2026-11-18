@@ -43,6 +43,64 @@ impl SimpleRng {
     }
 }
 
+/// Forge a plausible-but-hostile PE image to stress the parser's trust in
+/// attacker-controlled length and offset fields.
+///
+/// The buffer always begins with the `MZ` DOS magic so it clears the first
+/// gate, then randomizes `e_lfanew`, the `PE\0\0` signature placement, the
+/// machine type, `NumberOfSections` (often absurd, e.g. 0xFFFF), and
+/// `SizeOfOptionalHeader`, followed by a short, truncated section table. The
+/// goal is bytes that look like a PE far enough to drive the parser deep, then
+/// lie about sizes — exactly the shape of a malicious sample.
+fn build_corrupt_pe(rng: &mut SimpleRng) -> Vec<u8> {
+    let total = rng.next_range(64, 512);
+    let mut buf = rng.next_bytes(total);
+
+    // DOS magic.
+    buf[0] = b'M';
+    buf[1] = b'Z';
+
+    // e_lfanew at offset 0x3C: sometimes sane (~0x80), sometimes hostile.
+    let e_lfanew: u32 = match rng.next_u64() % 4 {
+        0 => 0x80,
+        1 => (rng.next_u64() as u32) % (total as u32).max(1), // somewhere in-buffer
+        2 => 0xFFFF_FFFF,                                     // past the end
+        _ => rng.next_u64() as u32,
+    };
+    if buf.len() >= 0x40 {
+        buf[0x3C..0x40].copy_from_slice(&e_lfanew.to_le_bytes());
+    }
+
+    // If e_lfanew lands inside the buffer, plant a PE header there most of the
+    // time so the COFF/optional-header path is actually entered.
+    let off = e_lfanew as usize;
+    if off + 24 <= buf.len() && !(rng.next_u64()).is_multiple_of(4) {
+        buf[off] = b'P';
+        buf[off + 1] = b'E';
+        buf[off + 2] = 0;
+        buf[off + 3] = 0;
+        // Machine (0x8664 amd64 / 0x14c i386 / garbage).
+        let machine: u16 = match rng.next_u64() % 3 {
+            0 => 0x8664,
+            1 => 0x014c,
+            _ => rng.next_u64() as u16,
+        };
+        buf[off + 4..off + 6].copy_from_slice(&machine.to_le_bytes());
+        // NumberOfSections: frequently absurd to stress the section loop.
+        let nsec: u16 = if rng.next_u64().is_multiple_of(2) {
+            0xFFFF
+        } else {
+            rng.next_u64() as u16
+        };
+        buf[off + 6..off + 8].copy_from_slice(&nsec.to_le_bytes());
+        // SizeOfOptionalHeader at COFF+16.
+        let opt: u16 = rng.next_u64() as u16;
+        buf[off + 20..off + 22].copy_from_slice(&opt.to_le_bytes());
+    }
+
+    buf
+}
+
 /// Result statistics from a fuzzing session.
 pub struct FuzzReport {
     pub iterations: usize,
@@ -140,6 +198,20 @@ pub fn run_fuzz_harness(iterations: usize) -> FuzzReport {
         .expect("CRITICAL: Panic detected in parser during adversarial fuzzing!");
 
         adversarial += 12; // 12 operations tested per adversarial cycle
+
+        // ── 8. Structured PE Fuzzing: Length-Field Trust Proof ──
+        // Purely random bytes almost never pass the `MZ` magic, so the deep PE
+        // parser paths (e_lfanew traversal, NumberOfSections loops, per-section
+        // offset/size math) go unexercised above. Here we forge *plausible* but
+        // hostile PE headers with attacker-controlled length and offset fields
+        // to prove the parser never panics on malicious structure.
+        let pe = build_corrupt_pe(&mut rng);
+        std::panic::catch_unwind(|| {
+            let _ = PeInfo.execute(&pe);
+            let _ = PeSections.execute(&pe);
+        })
+        .expect("CRITICAL: Panic detected in PE parser during structured fuzzing!");
+        adversarial += 2;
     }
 
     let elapsed = start.elapsed().as_millis();

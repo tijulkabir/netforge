@@ -63,18 +63,23 @@ Design rules (these are what separate a tool from a toy):
 The current code is clean but not yet "production shaped." Do this first so every
 later feature inherits it.
 
-- [ ] `--json` structured output layer across all ops (serde). Define a stable
-      output schema now.
-- [ ] Streaming engine: refactor ops to operate over `Read`/`Write` chunks, not
-      `Vec<u8>` snapshots. Keep mmap for random-access parsers (PE/ELF).
-- [ ] Error model: typed errors, exit codes, human + `--json` error output.
-- [ ] CLI polish: `-` = stdin, `--raw`, `--quiet`, `--output`, shell completions.
-- [ ] Testing: extend proptest + fuzz harness to every parser; add golden-file
-      tests; set a coverage gate in CI.
-- [ ] Supply chain: `cargo audit` + `cargo deny` in CI, `cargo-dist` multi-target
-      release (win/linux/macos, x86_64+aarch64), signed binaries, SBOM, reproducible
-      builds, `--version` with build provenance.
-- [ ] Docs: man page, `--help` examples, a real README quickstart.
+- [x] `--json` structured output layer (stable schema v1, hand-rolled, zero-dep).
+      Done — `src/output.rs`.
+- [x] Streaming foundation: `Operation::transform_stream(reader, writer)` with a
+      buffering default; constant-memory chunked override for XOR. Keep mmap for
+      random-access parsers (PE/ELF). Done — `src/op.rs`, `src/ops/crypto.rs`.
+      *Remaining:* opt more byte-wise ops into streaming + a CLI streaming fast-path.
+- [x] Error model: typed errors, stable `code()` slugs, sysexits `exit_code()`,
+      human + `--json` error output. Done — `src/error.rs`.
+- [x] CLI polish: `-` = stdin, shell completions (`--completions`), man page
+      (`--man`). Done — `src/main.rs`. *Remaining:* `--raw`, `--quiet`, `--output`.
+- [x] Testing: structured PE-parser fuzzer (length-field-trust proof) added to the
+      harness; streaming cross-chunk tests. Done — `src/fuzz.rs`, `src/lib.rs`.
+      *Remaining:* golden-file tests, coverage gate.
+- [x] Supply chain: `cargo deny` config + CI job (advisories, bans, licenses,
+      sources). Done — `deny.toml`, `.github/workflows/ci.yml`. *Remaining:*
+      `cargo-dist` multi-target release, signed binaries, SBOM, build provenance.
+- [x] Docs: man page generator. *Remaining:* `--help` examples, README quickstart.
 
 **Exit criteria:** a stranger can `cargo install`/download, pipe data through it in
 a script, parse the JSON, and trust the release artifact.
